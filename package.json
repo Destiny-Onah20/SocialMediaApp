@@ -6,7 +6,9 @@
   "scripts": {
     "start:dist": "tsc -w",
     "start:run": "nodemon build/server.js",
-    "start": "concurrently npm:start:*"
+    "start": "concurrently npm:start:*",
+    "dev": "nodemon build/server.js"
+
   },
   "keywords": [],
   "author": "",

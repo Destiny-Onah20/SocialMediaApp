@@ -8,14 +8,21 @@ const port = process.env.PORT;
 
 
 sequelize.authenticate().then(() => {
-  logger.info("Database connected!")
+  logger.info("Database connected!!")
 }).then(() => {
   app.listen(port, () => {
     console.log(`App listening on port: ${port}`);
   });
 }).catch((error) => {
+  console.log(`Failed to connect`)
   logger.error(error.message)
 })
 
+
+process.on("SIGINT", async () => {
+  await sequelize.close();
+  logger.info("Server closed");
+  process.exit(0);
+});
 
 
