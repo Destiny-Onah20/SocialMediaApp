@@ -1,5 +1,5 @@
-import sequelize from "../../configs/dbconfig";
-import { UserAttribute } from "../../interfaces/user.interface";
+import sequelize from "../configs/dbconfig";
+import { UserAttribute } from "../interfaces/user.interface";
 import {
   Model,
   Optional,
@@ -21,6 +21,7 @@ type optionalUserAttributes = Optional<
 
 class User extends Model<UserAttribute, optionalUserAttributes> {
    id!: string;
+   userId!: string;
    fullname!: string;
    userName!: string;
    email!: string;
@@ -41,6 +42,10 @@ User.init(
       allowNull: false,
       primaryKey: true,
       autoIncrement: true,
+    },
+    userId:{
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     fullName: {
       type: DataTypes.STRING,

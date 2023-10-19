@@ -1,5 +1,6 @@
 export interface UserAttribute {
   id: string;
+  userId: string;
   fullName: string;
   userName: string;
   password: string;
