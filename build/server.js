@@ -22,7 +22,7 @@ dbconfig_1.default.authenticate().then(() => {
     logger_1.default.info("Database connected!!");
 }).then(() => {
     app_1.default.listen(port, () => {
-        console.log(`App listening on port: ${port}`);
+        logger_1.default.info(`App listening on port: ${port}`);
     });
 }).catch((error) => {
     console.log(`Failed to connect`);

@@ -11,7 +11,7 @@ sequelize.authenticate().then(() => {
   logger.info("Database connected!!")
 }).then(() => {
   app.listen(port, () => {
-    console.log(`App listening on port: ${port}`);
+    logger.info(`App listening on port: ${port}`);
   });
 }).catch((error) => {
   console.log(`Failed to connect`)

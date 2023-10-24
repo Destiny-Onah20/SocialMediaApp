@@ -5,6 +5,7 @@ import {
   Optional,
   DataTypes
 } from "sequelize";
+import logger from "../utils/logger";
 
 type optionalUserAttributes = Optional<
   UserAttribute,
@@ -16,34 +17,34 @@ type optionalUserAttributes = Optional<
   | "image"
   | "isVerified"
   | "verifyCode"
-  
+
 >;
 
-class User extends Model<UserAttribute, optionalUserAttributes> {
-   id!: string;
-   userId!: string;
-   fullname!: string;
-   userName!: string;
-   email!: string;
-   password!: string;
-   phoneNumber!: string;
-   isVerified!: boolean;
-   image!: string;
-   token!: string;
-   verifyCode!: boolean;
-   readonly createdAt!: Date;
-   readonly updatedAt!: Date;
+class User extends Model<UserAttribute, optionalUserAttributes> implements UserAttribute {
+  declare id: number;
+  declare userId: string;
+  declare fullName: string;
+  declare userName: string;
+  declare email: string;
+  declare password: string;
+  declare phoneNumber: string;
+  declare isVerified: boolean;
+  declare image: string;
+  declare token: string;
+  declare verifyCode: string;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 User.init(
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true,
       autoIncrement: true,
     },
-    userId:{
+    userId: {
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -69,7 +70,7 @@ User.init(
       allowNull: false,
     },
     verifyCode: {
-      type: DataTypes.BOOLEAN,
+      type: DataTypes.STRING,
       defaultValue: false,
     },
     isVerified: {
@@ -99,5 +100,6 @@ User.init(
     tableName: "Users",
   }
 );
+
 
 export default User;

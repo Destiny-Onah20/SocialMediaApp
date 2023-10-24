@@ -1,15 +1,15 @@
 export interface UserAttribute {
-  id: string;
+  id?: number;
   userId: string;
   fullName: string;
   userName: string;
   password: string;
   email: string;
-  image: string;
+  image?: string;
   phoneNumber: string;
-  token: string;
-  verifyCode: number;
-  isVerified: boolean;
-  updatedAt: Date;
-  createdAt: Date;
+  token?: string;
+  verifyCode: string;
+  isVerified?: boolean;
+  updatedAt?: Date;
+  createdAt?: Date;
 }
