@@ -6,6 +6,6 @@ import { userSignUpSchema } from "../schemas/user.schema";
 const userRoute = Router();
 
 userRoute.route("/user").post(validateUserSignUp(userSignUpSchema), signUpUser);
-const a = 4
+
 
 export default userRoute; 

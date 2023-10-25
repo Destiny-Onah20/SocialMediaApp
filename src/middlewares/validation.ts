@@ -21,9 +21,7 @@ export const validateUserSignUp = (schema: ZodType<userInputType>): RequestHandl
 
   } catch (error: any) {
     if (error instanceof ZodError) {
-      const theExpectedErrorMessage = error.errors.map((error) => {
-        error.message
-      });
+      const theExpectedErrorMessage = error.errors.map((error) => error.message);
 
       return res.status(400).json({
         message: theExpectedErrorMessage[0]

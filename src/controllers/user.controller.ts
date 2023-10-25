@@ -12,9 +12,18 @@ import mailSender from "../middlewares/mailservice";
 
 
 export const signUpUser: RequestHandler = async (req, res) => {
+  console.log('userProfile');
+
   try {
     const { fullName, userName, password, email, phoneNumber } = req.body;
 
+    //validate email for existence
+    const checkEmail = await User.findOne({ where: { email } });
+    if (checkEmail) {
+      return res.status(400).json({
+        message: "Email already taken!"
+      })
+    }
     const saltPassword = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, saltPassword);
 
@@ -48,7 +57,7 @@ export const signUpUser: RequestHandler = async (req, res) => {
     const userProfile = new User(userData);
 
     // generate token for each user that signs up!
-    const generateToken = await jwt.sign({
+    const generateToken = jwt.sign({
       userId: userData.userId,
       userName: userData.userName
     }, <string>process.env.JWT_SECRET_TOKEN, {
@@ -67,8 +76,8 @@ export const signUpUser: RequestHandler = async (req, res) => {
           instructions: `Here's the code to verify your account below:`,
           button: {
             color: '#673ee6',
-            text: 'Verify Account',
-            link: verificationCode,
+            text: verificationCode,
+            link: "#",
           },
         },
         outro: 'If you did not sign up for our site, you can ignore this email.',
@@ -101,3 +110,4 @@ export const signUpUser: RequestHandler = async (req, res) => {
     })
   }
 };
+

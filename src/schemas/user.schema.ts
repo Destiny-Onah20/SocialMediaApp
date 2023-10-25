@@ -12,8 +12,8 @@ export type userInputType = {
 
 export const userSignUpSchema: ZodSchema<userInputType> = object({
   fullName: string({
-    required_error: "fullname is required!"
-  }).nonempty().min(2).regex(/[^a-zA-Z\s]/, ""),
+    required_error: "full name is required!"
+  }).nonempty().min(2).regex(/^[a-zA-Z\s]+$/, 'Full name can only contain letters and spaces'),
   userName: string({
     required_error: "username is required!"
   }).nonempty().min(2),
