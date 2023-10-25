@@ -2,7 +2,7 @@ import mailgen from "mailgen";
 
 
 const mailGenerator = new mailgen({
-  theme: "salted",
+  theme: "default",
   product: {
     name: "SocialCommerce",
     logo: "Social-commerce",

@@ -28,9 +28,7 @@ const validateUserSignUp = (schema) => (req, res, next) => __awaiter(void 0, voi
     }
     catch (error) {
         if (error instanceof zod_1.ZodError) {
-            const theExpectedErrorMessage = error.errors.map((error) => {
-                error.message;
-            });
+            const theExpectedErrorMessage = error.errors.map((error) => error.message);
             return res.status(400).json({
                 message: theExpectedErrorMessage[0]
             });

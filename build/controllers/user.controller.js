@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.signUpUser = void 0;
+exports.signMe = exports.signUpUser = void 0;
 const user_model_1 = __importDefault(require("../models/user.model"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const uuid_1 = require("uuid");
@@ -20,8 +20,16 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const mail_generator_1 = __importDefault(require("../helpers/mail-generator"));
 const mailservice_1 = __importDefault(require("../middlewares/mailservice"));
 const signUpUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('userProfile');
     try {
         const { fullName, userName, password, email, phoneNumber } = req.body;
+        //validate email for existence
+        const checkEmail = yield user_model_1.default.findOne({ where: { email } });
+        if (checkEmail) {
+            return res.status(400).json({
+                message: "Email already taken!"
+            });
+        }
         const saltPassword = yield bcrypt_1.default.genSalt(10);
         const hashPassword = yield bcrypt_1.default.hash(password, saltPassword);
         // generate a verification code 
@@ -49,7 +57,7 @@ const signUpUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         };
         const userProfile = new user_model_1.default(userData);
         // generate token for each user that signs up!
-        const generateToken = yield jsonwebtoken_1.default.sign({
+        const generateToken = jsonwebtoken_1.default.sign({
             userId: userData.userId,
             userName: userData.userName
         }, process.env.JWT_SECRET_TOKEN, {
@@ -66,8 +74,8 @@ const signUpUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                     instructions: `Here's the code to verify your account below:`,
                     button: {
                         color: '#673ee6',
-                        text: 'Verify Account',
-                        link: verificationCode,
+                        text: verificationCode,
+                        link: "#",
                     },
                 },
                 outro: 'If you did not sign up for our site, you can ignore this email.',
@@ -99,3 +107,7 @@ const signUpUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.signUpUser = signUpUser;
+const signMe = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("hellp");
+});
+exports.signMe = signMe;
