@@ -111,7 +111,3 @@ export const signUpUser: RequestHandler = async (req, res) => {
   }
 };
 
-export const signMe: RequestHandler = async (req, res) => {
-  console.log("hellp");
-
-}
