@@ -9,8 +9,6 @@ import mailGenerator from "../helpers/mail-generator";
 import mailSender from "../middlewares/mailservice";
 
 
-
-
 export const signUpUser: RequestHandler = async (req, res) => {
   console.log('userProfile');
 
@@ -111,3 +109,28 @@ export const signUpUser: RequestHandler = async (req, res) => {
   }
 };
 
+
+export const verifyUserSignUp: RequestHandler = async (req, res) => {
+  try {
+    const { verificationCode } = req.body;
+    const theVerificationCode = await User.findOne({ where: { $verifyCode$: verificationCode } });
+    if (!theVerificationCode) {
+      return res.status(400).json({
+        message: "Invalid verification code!"
+      })
+    }
+
+    theVerificationCode.isVerified = true;
+    await theVerificationCode.save();
+
+    return res.status(201).json({
+      message: "Success!",
+    })
+
+  } catch (error: any) {
+    res.status(500).json({
+      message: error.message,
+      status: "Failed",
+    })
+  }
+};
