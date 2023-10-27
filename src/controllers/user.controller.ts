@@ -111,3 +111,62 @@ export const signUpUser: RequestHandler = async (req, res) => {
   }
 };
 
+export const forgotPassword: RequestHandler = async (req, res)=>{
+  try {
+    const {email} = req.body
+
+    //validate email for existence
+    const checkEmail = await User.findOne({ where: { email } });
+    if (!checkEmail) {
+      return res.status(404).json({
+        message: "Email not found"
+      })
+    }
+
+    // generate password token
+    const passwordToken = jwt.sign({
+      userId : checkEmail.userId,
+      userName : checkEmail.userName
+    }, <string>process.env.JWT_SECRET_TOKEN, {
+      expiresIn: "5m"
+    })
+
+
+    //send the password resest link to the user email address
+
+    const emailContent: Content = {
+      body: {
+        name: email,
+        intro: ` Welcome to Social-commerce! Please click on the link to reset your password:`,
+        action: {
+          instructions: `Here's the link to reset your password below:`,
+          button: {
+            color: '#673ee6',
+            text: "Note: This link will expire in 5(five) minutes",
+            link: "#",
+          },
+        },
+        outro: 'If you did not make this request, you can ignore this email.',
+      },
+    };
+    const emailBody = mailGenerator.generate(emailContent);
+    const emailText = mailGenerator.generatePlaintext(emailContent);
+
+    const mailInstance = new mailSender();
+    mailInstance.createConnection();
+    mailInstance.mail({
+      from: {
+        address: process.env.EMAIL
+      },
+      email: checkEmail.email,
+      subject: "Kindly verify!",
+      message: emailText,
+      html: emailBody
+    })
+  } catch (error:any) {
+    res.status(500).json({
+      message:error.message,
+      status :"Failed"
+    })
+  }
+}

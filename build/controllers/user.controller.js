@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.signUpUser = void 0;
+exports.forgotPassword = exports.signUpUser = void 0;
 const user_model_1 = __importDefault(require("../models/user.model"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const uuid_1 = require("uuid");
@@ -107,3 +107,58 @@ const signUpUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.signUpUser = signUpUser;
+const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email } = req.body;
+        //validate email for existence
+        const checkEmail = yield user_model_1.default.findOne({ where: { email } });
+        if (!checkEmail) {
+            return res.status(404).json({
+                message: "Email not found"
+            });
+        }
+        // generate password token
+        const passwordToken = jsonwebtoken_1.default.sign({
+            userId: checkEmail.userId,
+            userName: checkEmail.userName
+        }, process.env.JWT_SECRET_TOKEN, {
+            expiresIn: "5m"
+        });
+        //send the password resest link to the user email address
+        const emailContent = {
+            body: {
+                name: email,
+                intro: ` Welcome to Social-commerce! Please click on the link to reset your password:`,
+                action: {
+                    instructions: `Here's the link to reset your password below:`,
+                    button: {
+                        color: '#673ee6',
+                        text: "Note: This link will expire in 5(five) minutes",
+                        link: "#",
+                    },
+                },
+                outro: 'If you did not make this request, you can ignore this email.',
+            },
+        };
+        const emailBody = mail_generator_1.default.generate(emailContent);
+        const emailText = mail_generator_1.default.generatePlaintext(emailContent);
+        const mailInstance = new mailservice_1.default();
+        mailInstance.createConnection();
+        mailInstance.mail({
+            from: {
+                address: process.env.EMAIL
+            },
+            email: checkEmail.email,
+            subject: "Kindly verify!",
+            message: emailText,
+            html: emailBody
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            message: error.message,
+            status: "Failed"
+        });
+    }
+});
+exports.forgotPassword = forgotPassword;
