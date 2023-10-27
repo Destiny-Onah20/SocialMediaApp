@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { RequestHandler } from "express";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
+import { JwtPayload } from 'jsonwebtoken'
 import { UserAttribute } from "../interfaces/user.interface";
 import { Content } from "mailgen";
 import mailGenerator from "../helpers/mail-generator";
@@ -126,9 +127,10 @@ export const forgotPassword: RequestHandler = async (req, res)=>{
     // generate password token
     const passwordToken = jwt.sign({
       userId : checkEmail.userId,
-      userName : checkEmail.userName
+      userName : checkEmail.userName,
+      email : checkEmail.email
     }, <string>process.env.JWT_SECRET_TOKEN, {
-      expiresIn: "5m"
+      expiresIn: "1d"
     })
 
 
@@ -163,10 +165,72 @@ export const forgotPassword: RequestHandler = async (req, res)=>{
       message: emailText,
       html: emailBody
     })
+
+
+    res.status(200).json({
+      message: 'Success!',
+      data : passwordToken
+    })
   } catch (error:any) {
     res.status(500).json({
       message:error.message,
       status :"Failed"
     })
   }
+}
+
+
+export const resetPassword :RequestHandler = async (req,res)=>{
+  const {token} = req.params
+  const {password} = req.body
+
+  interface UserPayload {
+    userId : string;
+    email : string;
+    userName : string;
+  }
+  
+  const userPayload : jwt.JwtPayload | any = jwt.verify(
+    token,
+    <string>process.env.JWT_SECRET_TOKEN,
+    (err, data)=>{
+      if(err) return res.json("The password reset link has expired")
+      else return data
+      
+    }
+  )
+
+  const validUserPayload = userPayload as UserPayload;
+
+
+    const userID = validUserPayload.userId
+    const email = validUserPayload.email
+    console.log(email);
+    
+
+    //validate email for existence
+  const checkEmail = await User.findOne({ where: { email } });
+  if (!checkEmail) {
+    return res.status(404).json({
+      message: "Email not found"
+    })
+  }
+
+  console.log(checkEmail);
+  const saltPassword = await bcrypt.genSalt(10);
+  const hashPassword = await bcrypt.hash(password, saltPassword);
+
+  
+  // Check if userPayload has the expected properties
+  // if (
+  //   'userId' in userPayload &&
+  //   'userEmail' in userPayload &&
+  //   'userName' in userPayload
+  // ) {
+    // You can safely assert the type to UserPayload
+    // const validUserPayload = userPayload as UserPayload;
+  //  console.log(decodedToken);
+   
+  
+
 }

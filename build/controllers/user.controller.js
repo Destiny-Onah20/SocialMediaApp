@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.forgotPassword = exports.signUpUser = void 0;
+exports.resetPassword = exports.forgotPassword = exports.signUpUser = void 0;
 const user_model_1 = __importDefault(require("../models/user.model"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const uuid_1 = require("uuid");
@@ -120,9 +120,10 @@ const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
         // generate password token
         const passwordToken = jsonwebtoken_1.default.sign({
             userId: checkEmail.userId,
-            userName: checkEmail.userName
+            userName: checkEmail.userName,
+            email: checkEmail.email
         }, process.env.JWT_SECRET_TOKEN, {
-            expiresIn: "5m"
+            expiresIn: "1d"
         });
         //send the password resest link to the user email address
         const emailContent = {
@@ -153,6 +154,10 @@ const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: emailText,
             html: emailBody
         });
+        res.status(200).json({
+            message: 'Success!',
+            data: passwordToken
+        });
     }
     catch (error) {
         res.status(500).json({
@@ -162,3 +167,37 @@ const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.forgotPassword = forgotPassword;
+const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { token } = req.params;
+    const { password } = req.body;
+    const userPayload = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET_TOKEN, (err, data) => {
+        if (err)
+            return res.json("The password reset link has expired");
+        else
+            return data;
+    });
+    const validUserPayload = userPayload;
+    const userID = validUserPayload.userId;
+    const email = validUserPayload.email;
+    console.log(email);
+    //validate email for existence
+    const checkEmail = yield user_model_1.default.findOne({ where: { email } });
+    if (!checkEmail) {
+        return res.status(404).json({
+            message: "Email not found"
+        });
+    }
+    console.log(checkEmail);
+    const saltPassword = yield bcrypt_1.default.genSalt(10);
+    const hashPassword = yield bcrypt_1.default.hash(password, saltPassword);
+    // Check if userPayload has the expected properties
+    // if (
+    //   'userId' in userPayload &&
+    //   'userEmail' in userPayload &&
+    //   'userName' in userPayload
+    // ) {
+    // You can safely assert the type to UserPayload
+    // const validUserPayload = userPayload as UserPayload;
+    //  console.log(decodedToken);
+});
+exports.resetPassword = resetPassword;
