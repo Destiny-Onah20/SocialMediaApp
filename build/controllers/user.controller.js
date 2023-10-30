@@ -12,13 +12,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyUserSignUp = exports.signUpUser = void 0;
+exports.uploadProfileImage = exports.verifyUserSignUp = exports.signUpUser = void 0;
 const user_model_1 = __importDefault(require("../models/user.model"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const uuid_1 = require("uuid");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const mail_generator_1 = __importDefault(require("../helpers/mail-generator"));
 const mailservice_1 = __importDefault(require("../middlewares/mailservice"));
+const cloudinary_1 = __importDefault(require("../middlewares/cloudinary"));
 const signUpUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     console.log('userProfile');
     try {
@@ -65,6 +66,7 @@ const signUpUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         });
         userProfile.token = generateToken;
         yield userProfile.save();
+        // console.log(generateToken);
         //send the verification code to the user email address
         const emailContent = {
             body: {
@@ -130,3 +132,38 @@ const verifyUserSignUp = (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.verifyUserSignUp = verifyUserSignUp;
+const uploadProfileImage = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const token = req.params.token;
+        // check if an image was uploaded!
+        const file = (_a = req.files) === null || _a === void 0 ? void 0 : _a.image;
+        if (!file) {
+            return res.status(400).json({
+                message: 'No file Uploaded!'
+            });
+        }
+        const decodedValues = jsonwebtoken_1.default.decode(token);
+        console.log(decodedValues);
+        const uploads = Array.isArray(file) ? file : [file];
+        for (const file of uploads) {
+            const result = yield cloudinary_1.default.uploader.upload(file.tempFilePath);
+            const uploadFileData = {
+                image: result.secure_url,
+                cloudId: result.public_id
+            };
+            yield user_model_1.default.update(uploadFileData, { where: { token } });
+            return res.status(200).json({
+                message: "Upload Success!"
+            });
+        }
+        ;
+    }
+    catch (error) {
+        res.status(500).json({
+            message: error.message,
+            status: "Failed",
+        });
+    }
+});
+exports.uploadProfileImage = uploadProfileImage;

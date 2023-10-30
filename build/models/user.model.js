@@ -55,6 +55,14 @@ User.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: true,
     },
+    cloudId: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+    },
+    coverPhoto: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+    },
     createdAt: {
         type: sequelize_1.DataTypes.DATE,
         allowNull: false,
