@@ -6,6 +6,8 @@ export interface UserAttribute {
   password: string;
   email: string;
   image?: string;
+  cloudId?: string;
+  coverPhoto?: string;
   phoneNumber: string;
   token?: string;
   verifyCode: string;

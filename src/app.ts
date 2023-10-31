@@ -5,7 +5,9 @@ import userRoute from "./routers/user.route";
 const app = express();
 
 
-
+app.use(fileUpload({
+  useTempFiles: true
+}))
 
 app.use(express.json());
 app.get("/", (req: Request, res: Response) => {

@@ -30,6 +30,9 @@ class User extends Model<UserAttribute, optionalUserAttributes> implements UserA
   declare phoneNumber: string;
   declare isVerified: boolean;
   declare image: string;
+  declare cloudId?: string | undefined;
+  declare profileImages?: string[];
+  declare coverPhoto?: string | undefined;
   declare token: string;
   declare verifyCode: string;
   declare readonly createdAt: Date;
@@ -85,6 +88,14 @@ User.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    cloudId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    coverPhoto: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -100,6 +111,7 @@ User.init(
     tableName: "Users",
   }
 );
+
 
 
 export default User;

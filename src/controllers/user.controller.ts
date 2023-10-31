@@ -8,8 +8,8 @@ import { UserAttribute } from "../interfaces/user.interface";
 import { Content } from "mailgen";
 import mailGenerator from "../helpers/mail-generator";
 import mailSender from "../middlewares/mailservice";
-
-
+import { UploadedFile } from "express-fileupload";
+import cloudinary from "../middlewares/cloudinary";
 
 
 export const signUpUser: RequestHandler = async (req, res) => {
@@ -66,6 +66,8 @@ export const signUpUser: RequestHandler = async (req, res) => {
     });
     userProfile.token = generateToken;
     await userProfile.save();
+    // console.log(generateToken);
+
 
     //send the verification code to the user email address
 
@@ -112,6 +114,68 @@ export const signUpUser: RequestHandler = async (req, res) => {
   }
 };
 
+
+export const verifyUserSignUp: RequestHandler = async (req, res) => {
+  try {
+    const { verificationCode } = req.body;
+    const theVerificationCode = await User.findOne({ where: { $verifyCode$: verificationCode } });
+    if (!theVerificationCode) {
+      return res.status(400).json({
+        message: "Invalid verification code!"
+      })
+    }
+
+    theVerificationCode.isVerified = true;
+    await theVerificationCode.save();
+
+    return res.status(201).json({
+      message: "Success!",
+    })
+
+  } catch (error: any) {
+    res.status(500).json({
+      message: error.message,
+      status: "Failed",
+    })
+  }
+};
+
+
+export const uploadProfileImage: RequestHandler = async (req, res) => {
+  try {
+    const token = req.params.token;
+    // check if an image was uploaded!
+    const file = req.files?.image as UploadedFile[];
+    if (!file) {
+      return res.status(400).json({
+        message: 'No file Uploaded!'
+      })
+    }
+    const decodedValues = jwt.decode(token);
+    console.log(decodedValues);
+
+
+    const uploads = Array.isArray(file) ? file : [file];
+    for (const file of uploads) {
+      const result = await cloudinary.uploader.upload(file.tempFilePath);
+
+
+      const uploadFileData = {
+        image: result.secure_url,
+        cloudId: result.public_id
+      }
+
+      await User.update(uploadFileData, { where: { token } });
+      return res.status(200).json({
+        message: "Upload Success!"
+      })
+    };
+  } catch (error: any) {
+    res.status(500).json({
+      message: error.message,
+      status: "Failed",
+    })
+  
 export const forgotPassword: RequestHandler = async (req, res)=>{
   try {
     const {email} = req.body
@@ -232,5 +296,4 @@ export const resetPassword :RequestHandler = async (req,res)=>{
   }
    
   
-
 }
