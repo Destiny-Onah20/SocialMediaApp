@@ -17,7 +17,7 @@ const dbconfig_1 = __importDefault(require("./configs/dbconfig"));
 const logger_1 = __importDefault(require("./utils/logger"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const port = process.env.PORT;
+const port = process.env.MYSQLPORT;
 dbconfig_1.default.authenticate().then(() => {
     logger_1.default.info("Database connected!!");
 }).then(() => {

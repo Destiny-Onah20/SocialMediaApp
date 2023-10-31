@@ -4,7 +4,8 @@ import logger from "./utils/logger";
 import dotenv from "dotenv";
 dotenv.config();
 
-const port = process.env.PORT;
+const port = process.env.MYSQLPORT;
+
 
 
 sequelize.authenticate().then(() => {
