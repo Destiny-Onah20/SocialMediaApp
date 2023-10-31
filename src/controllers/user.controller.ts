@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { RequestHandler } from "express";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
+import { JwtPayload } from 'jsonwebtoken'
 import { UserAttribute } from "../interfaces/user.interface";
 import { Content } from "mailgen";
 import mailGenerator from "../helpers/mail-generator";
@@ -174,5 +175,125 @@ export const uploadProfileImage: RequestHandler = async (req, res) => {
       message: error.message,
       status: "Failed",
     })
+  
+export const forgotPassword: RequestHandler = async (req, res)=>{
+  try {
+    const {email} = req.body
+
+    //validate email for existence
+    const checkEmail = await User.findOne({ where: { email } });
+    if (!checkEmail) {
+      return res.status(404).json({
+        message: "Email not found"
+      })
+    }
+
+    // generate password token
+    const passwordToken = jwt.sign({
+      userId : checkEmail.userId,
+      userName : checkEmail.userName,
+      email : checkEmail.email
+    }, <string>process.env.JWT_SECRET_TOKEN, {
+      expiresIn: "1d"
+    })
+
+
+    //send the password resest link to the user email address
+
+    const emailContent: Content = {
+      body: {
+        name: email,
+        intro: ` Welcome to Social-commerce! Please click on the link to reset your password:`,
+        action: {
+          instructions: `Here's the link to reset your password below (Note: this link will expire in 5(five) minutes):`,
+          button: {
+            color: '#673ee6',
+            text: "Reset Password",
+            link: `localhost:1000/api/v1/user/resetPassword/${passwordToken}`,
+          },
+        },
+        outro: 'If you did not make this request, you can ignore this email.',
+      },
+    };
+    const emailBody = mailGenerator.generate(emailContent);
+    const emailText = mailGenerator.generatePlaintext(emailContent);
+
+    const mailInstance = new mailSender();
+    mailInstance.createConnection();
+    mailInstance.mail({
+      from: {
+        address: process.env.EMAIL
+      },
+      email: checkEmail.email,
+      subject: "Kindly verify!",
+      message: emailText,
+      html: emailBody
+    })
+
+
+    res.status(200).json({
+      message: 'Success!',
+      data : passwordToken
+    })
+  } catch (error:any) {
+    res.status(500).json({
+      message:error.message,
+      status :"Failed"
+    })
   }
+}
+
+
+export const resetPassword :RequestHandler = async (req,res)=>{
+  try {
+    const {token} = req.params
+  const {password} = req.body
+
+  interface UserPayload {
+    userId : string;
+    email : string;
+    userName : string;
+  }
+  
+  const userPayload : jwt.JwtPayload | any = jwt.verify(
+    token,
+    <string>process.env.JWT_SECRET_TOKEN,
+    (err, data)=>{
+      if(err) return res.json("The password reset link has expired")
+      else return data
+      
+    }
+  )
+
+  const validUserPayload = userPayload as UserPayload;
+
+
+    const userID = validUserPayload.userId
+    const email = validUserPayload.email
+    
+    //validate email for existence
+  const checkEmail = await User.findOne({ where: { email } });
+  if (!checkEmail) {
+    return res.status(404).json({
+      message: "Email not found"
+    })
+  }
+  
+  const saltPassword = await bcrypt.genSalt(10);
+  const hashPassword = await bcrypt.hash(password, saltPassword);
+
+  checkEmail.password = hashPassword
+  await checkEmail.save()
+  res.status(200).json({
+    message :"Password Updated Successfully",
+  })
+
+  } catch (error:any) {
+    res.status(500).json({
+      message:error.message,
+      status :"Failed"
+    })
+  }
+   
+  
 }

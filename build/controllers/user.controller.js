@@ -12,7 +12,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+
 exports.uploadProfileImage = exports.verifyUserSignUp = exports.signUpUser = void 0;
+
+exports.resetPassword = exports.forgotPassword = exports.signUpUser = void 0;
+
 const user_model_1 = __importDefault(require("../models/user.model"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const uuid_1 = require("uuid");
@@ -109,6 +113,7 @@ const signUpUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.signUpUser = signUpUser;
+
 const verifyUserSignUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { verificationCode } = req.body;
@@ -122,11 +127,64 @@ const verifyUserSignUp = (req, res) => __awaiter(void 0, void 0, void 0, functio
         yield theVerificationCode.save();
         return res.status(201).json({
             message: "Success!",
+
+const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email } = req.body;
+        //validate email for existence
+        const checkEmail = yield user_model_1.default.findOne({ where: { email } });
+        if (!checkEmail) {
+            return res.status(404).json({
+                message: "Email not found"
+            });
+        }
+        // generate password token
+        const passwordToken = jsonwebtoken_1.default.sign({
+            userId: checkEmail.userId,
+            userName: checkEmail.userName,
+            email: checkEmail.email
+        }, process.env.JWT_SECRET_TOKEN, {
+            expiresIn: "1d"
+        });
+        //send the password resest link to the user email address
+        const emailContent = {
+            body: {
+                name: email,
+                intro: ` Welcome to Social-commerce! Please click on the link to reset your password:`,
+                action: {
+                    instructions: `Here's the link to reset your password below (Note: this link will expire in 5(five) minutes):`,
+                    button: {
+                        color: '#673ee6',
+                        text: "Reset Password",
+                        link: `localhost:1000/api/v1/user/resetPassword/${passwordToken}`,
+                    },
+                },
+                outro: 'If you did not make this request, you can ignore this email.',
+            },
+        };
+        const emailBody = mail_generator_1.default.generate(emailContent);
+        const emailText = mail_generator_1.default.generatePlaintext(emailContent);
+        const mailInstance = new mailservice_1.default();
+        mailInstance.createConnection();
+        mailInstance.mail({
+            from: {
+                address: process.env.EMAIL
+            },
+            email: checkEmail.email,
+            subject: "Kindly verify!",
+            message: emailText,
+            html: emailBody
+        });
+        res.status(200).json({
+            message: 'Success!',
+            data: passwordToken
+
         });
     }
     catch (error) {
         res.status(500).json({
             message: error.message,
+
             status: "Failed",
         });
     }
@@ -158,12 +216,53 @@ const uploadProfileImage = (req, res) => __awaiter(void 0, void 0, void 0, funct
             });
         }
         ;
+            status: "Failed"
+        });
+    }
+});
+exports.forgotPassword = forgotPassword;
+const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+        const userPayload = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET_TOKEN, (err, data) => {
+            if (err)
+                return res.json("The password reset link has expired");
+            else
+                return data;
+        });
+        const validUserPayload = userPayload;
+        const userID = validUserPayload.userId;
+        const email = validUserPayload.email;
+        //validate email for existence
+        const checkEmail = yield user_model_1.default.findOne({ where: { email } });
+        if (!checkEmail) {
+            return res.status(404).json({
+                message: "Email not found"
+            });
+        }
+        const saltPassword = yield bcrypt_1.default.genSalt(10);
+        const hashPassword = yield bcrypt_1.default.hash(password, saltPassword);
+        checkEmail.password = hashPassword;
+        yield checkEmail.save();
+        res.status(200).json({
+            message: "Password Updated Successfully",
+        });
+
     }
     catch (error) {
         res.status(500).json({
             message: error.message,
+
             status: "Failed",
         });
     }
 });
 exports.uploadProfileImage = uploadProfileImage;
+
+            status: "Failed"
+        });
+    }
+});
+exports.resetPassword = resetPassword;
+
