@@ -187,17 +187,9 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             message: "Email not found"
         });
     }
-    console.log(checkEmail);
     const saltPassword = yield bcrypt_1.default.genSalt(10);
     const hashPassword = yield bcrypt_1.default.hash(password, saltPassword);
-    // Check if userPayload has the expected properties
-    // if (
-    //   'userId' in userPayload &&
-    //   'userEmail' in userPayload &&
-    //   'userName' in userPayload
-    // ) {
-    // You can safely assert the type to UserPayload
-    // const validUserPayload = userPayload as UserPayload;
-    //  console.log(decodedToken);
+    checkEmail.password = hashPassword;
+    yield checkEmail.save();
 });
 exports.resetPassword = resetPassword;

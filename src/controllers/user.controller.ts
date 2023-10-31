@@ -216,20 +216,12 @@ export const resetPassword :RequestHandler = async (req,res)=>{
     })
   }
 
-  console.log(checkEmail);
   const saltPassword = await bcrypt.genSalt(10);
   const hashPassword = await bcrypt.hash(password, saltPassword);
 
-  
-  // Check if userPayload has the expected properties
-  // if (
-  //   'userId' in userPayload &&
-  //   'userEmail' in userPayload &&
-  //   'userName' in userPayload
-  // ) {
-    // You can safely assert the type to UserPayload
-    // const validUserPayload = userPayload as UserPayload;
-  //  console.log(decodedToken);
+  checkEmail.password = hashPassword
+  await checkEmail.save()
+
    
   
 
