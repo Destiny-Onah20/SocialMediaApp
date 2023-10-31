@@ -131,11 +131,11 @@ const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 name: email,
                 intro: ` Welcome to Social-commerce! Please click on the link to reset your password:`,
                 action: {
-                    instructions: `Here's the link to reset your password below:`,
+                    instructions: `Here's the link to reset your password below (Note: this link will expire in 5(five) minutes):`,
                     button: {
                         color: '#673ee6',
-                        text: "Note: This link will expire in 5(five) minutes",
-                        link: "#",
+                        text: "Reset Password",
+                        link: `localhost:1000/api/v1/user/resetPassword/${passwordToken}`,
                     },
                 },
                 outro: 'If you did not make this request, you can ignore this email.',
@@ -168,28 +168,38 @@ const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
 });
 exports.forgotPassword = forgotPassword;
 const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { token } = req.params;
-    const { password } = req.body;
-    const userPayload = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET_TOKEN, (err, data) => {
-        if (err)
-            return res.json("The password reset link has expired");
-        else
-            return data;
-    });
-    const validUserPayload = userPayload;
-    const userID = validUserPayload.userId;
-    const email = validUserPayload.email;
-    console.log(email);
-    //validate email for existence
-    const checkEmail = yield user_model_1.default.findOne({ where: { email } });
-    if (!checkEmail) {
-        return res.status(404).json({
-            message: "Email not found"
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+        const userPayload = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET_TOKEN, (err, data) => {
+            if (err)
+                return res.json("The password reset link has expired");
+            else
+                return data;
+        });
+        const validUserPayload = userPayload;
+        const userID = validUserPayload.userId;
+        const email = validUserPayload.email;
+        //validate email for existence
+        const checkEmail = yield user_model_1.default.findOne({ where: { email } });
+        if (!checkEmail) {
+            return res.status(404).json({
+                message: "Email not found"
+            });
+        }
+        const saltPassword = yield bcrypt_1.default.genSalt(10);
+        const hashPassword = yield bcrypt_1.default.hash(password, saltPassword);
+        checkEmail.password = hashPassword;
+        yield checkEmail.save();
+        res.status(200).json({
+            message: "Password Updated Successfully",
         });
     }
-    const saltPassword = yield bcrypt_1.default.genSalt(10);
-    const hashPassword = yield bcrypt_1.default.hash(password, saltPassword);
-    checkEmail.password = hashPassword;
-    yield checkEmail.save();
+    catch (error) {
+        res.status(500).json({
+            message: error.message,
+            status: "Failed"
+        });
+    }
 });
 exports.resetPassword = resetPassword;

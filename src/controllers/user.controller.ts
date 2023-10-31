@@ -141,11 +141,11 @@ export const forgotPassword: RequestHandler = async (req, res)=>{
         name: email,
         intro: ` Welcome to Social-commerce! Please click on the link to reset your password:`,
         action: {
-          instructions: `Here's the link to reset your password below:`,
+          instructions: `Here's the link to reset your password below (Note: this link will expire in 5(five) minutes):`,
           button: {
             color: '#673ee6',
-            text: "Note: This link will expire in 5(five) minutes",
-            link: "#",
+            text: "Reset Password",
+            link: `localhost:1000/api/v1/user/resetPassword/${passwordToken}`,
           },
         },
         outro: 'If you did not make this request, you can ignore this email.',
@@ -181,7 +181,8 @@ export const forgotPassword: RequestHandler = async (req, res)=>{
 
 
 export const resetPassword :RequestHandler = async (req,res)=>{
-  const {token} = req.params
+  try {
+    const {token} = req.params
   const {password} = req.body
 
   interface UserPayload {
@@ -205,9 +206,7 @@ export const resetPassword :RequestHandler = async (req,res)=>{
 
     const userID = validUserPayload.userId
     const email = validUserPayload.email
-    console.log(email);
     
-
     //validate email for existence
   const checkEmail = await User.findOne({ where: { email } });
   if (!checkEmail) {
@@ -215,13 +214,22 @@ export const resetPassword :RequestHandler = async (req,res)=>{
       message: "Email not found"
     })
   }
-
+  
   const saltPassword = await bcrypt.genSalt(10);
   const hashPassword = await bcrypt.hash(password, saltPassword);
 
   checkEmail.password = hashPassword
   await checkEmail.save()
+  res.status(200).json({
+    message :"Password Updated Successfully",
+  })
 
+  } catch (error:any) {
+    res.status(500).json({
+      message:error.message,
+      status :"Failed"
+    })
+  }
    
   
 
