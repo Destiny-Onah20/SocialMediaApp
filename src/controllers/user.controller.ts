@@ -175,7 +175,8 @@ export const uploadProfileImage: RequestHandler = async (req, res) => {
       message: error.message,
       status: "Failed",
     })
-  
+  }
+}
 export const forgotPassword: RequestHandler = async (req, res)=>{
   try {
     const {email} = req.body
