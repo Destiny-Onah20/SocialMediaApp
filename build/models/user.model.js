@@ -51,6 +51,15 @@ User.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: true,
     },
+    twoFA_enabled: {
+        type: sequelize_1.DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    twoFA_secret: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+    },
     image: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: true,
