@@ -1,6 +1,6 @@
 import User from "../models/user.model";
 import bcrypt from "bcrypt";
-import { RequestHandler } from "express";
+import { RequestHandler, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import { JwtPayload } from 'jsonwebtoken'
@@ -10,6 +10,10 @@ import mailGenerator from "../helpers/mail-generator";
 import mailSender from "../middlewares/mailservice";
 import { UploadedFile } from "express-fileupload";
 import cloudinary from "../middlewares/cloudinary";
+import qrcode from "qrcode";
+import {authenticator} from "otplib";
+import { genToken } from "../utils/jsonwebtoken";
+import { twoFaAuth } from "../utils/authenticator";
 
 
 export const signUpUser: RequestHandler = async (req, res) => {
@@ -175,6 +179,8 @@ export const uploadProfileImage: RequestHandler = async (req, res) => {
       message: error.message,
       status: "Failed",
     })
+  }
+}
   
 export const forgotPassword: RequestHandler = async (req, res)=>{
   try {
@@ -288,12 +294,159 @@ export const resetPassword :RequestHandler = async (req,res)=>{
     message :"Password Updated Successfully",
   })
 
-  } catch (error:any) {
+   } catch (error:any) {
     res.status(500).json({
       message:error.message,
       status :"Failed"
     })
   }
-   
-  
 }
+
+export const loginUser: RequestHandler = async (req, res) => {
+  try {
+    const {email, phoneNumber, userName, password, code} = req.body
+    let user;
+    let checkPassword = false;
+
+    if (email) {
+      user = await User.findOne({ where: { email } });
+    } else if (phoneNumber) {
+      user = await User.findOne({ where: { phoneNumber } });
+    } else if (userName) {
+      user = await User.findOne({ where: { userName } });
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+        status: "Failed!",
+      });
+    }else{
+    checkPassword = bcrypt.compareSync(password, user.password)
+    if(checkPassword){
+      if(!user.isVerified){
+        const verificationCode =  genToken(user.userId, "1d")
+        const emailContent: Content = {
+          body: {
+            name: `${user.userName}`,
+            intro: ` Welcome to Social-commerce! Please verify your account using this code:`,
+            action: {
+              instructions: `Here's the code to verify your account below:`,
+              button: {
+                color: '#673ee6',
+                text: verificationCode,
+                link: "#",
+              },
+            },
+            outro: 'If you did not sign up for our site, you can ignore this email.',
+          },
+        };
+        const emailBody = mailGenerator.generate(emailContent);
+        const emailText = mailGenerator.generatePlaintext(emailContent);
+    
+        const mailInstance = new mailSender();
+        mailInstance.createConnection();
+        mailInstance.mail({
+          from: {
+            address: process.env.EMAIL
+          },
+          email: user.email,
+          subject: "Kindly verify!",
+          message: emailText,
+          html: emailBody
+        })
+        res.status(401).json({
+          message: "please check mail and verify your account"
+        })
+      }else if(user.twoFA_enabled){
+         const verified = authenticator.check(code, user.twoFA_secret!);
+        if (verified) {
+          const token = genToken(user.userId, "1d")
+        res.status(200).json({
+          token: token,
+          message: "login successful"
+        })
+        }else{
+          res.status(401).json({message: "Please enter two factor authorization code "})
+        }
+      }else{
+        const token = genToken(user.userId, "1d")
+        res.status(200).json({
+          token: token,
+          message: "login successful"
+        })
+      }
+    }else{
+      res.status(401).json({message: "invalid password"})
+    }
+    }     
+  } catch (error: any) {
+    res.status(500).json({
+      message: error.message,
+      status: "Failed!"
+    })
+  }
+}
+
+
+export const qrcodeimage: RequestHandler = async (req: Request, res: Response) => {
+  try {
+   
+    const user = await User.findOne({ where: { userId: req.user?.userId } });
+    if (user) {
+      const secret = authenticator.generateSecret();
+      const uri = authenticator.keyuri(user.email, "social-media", secret);
+    
+      const image = await qrcode.toDataURL(uri);
+
+      // Update the user's two-factor authentication secret
+      user.set({
+        twoFA_secret: secret
+      }) // Assuming you have a twofa property in your User model
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        image,
+      });
+    } else {
+      res.status(404).json({
+        message: "User not found",
+        status: "Failed!",
+      });
+    }
+  } catch (error: any) {
+    res.status(500).json({
+      message: error.message,
+      status: "Failed!",
+    });
+  }
+};
+
+export const enableTwoFa: RequestHandler = async (req: Request, res) => {
+  try {
+    //const { code } = req.body;
+    const user = await User.findOne({where: {userId: req.user?.userId}});
+    const verified = await twoFaAuth(req);
+    if (verified) {
+      user?.set({
+        twoFA_enabled: true,
+      })
+      await user?.save();
+      res.status(200).json({
+        message: "success",
+      });
+    } else {
+      res.status(401).json({
+        message: "invalid code, try again",
+      });
+    }
+  } catch (error: any) {
+    res.status(500).json({
+      message: error.message,
+      status: "Failed!"
+    })
+  }
+}
+
+

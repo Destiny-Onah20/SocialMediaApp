@@ -17,6 +17,8 @@ type optionalUserAttributes = Optional<
   | "image"
   | "isVerified"
   | "verifyCode"
+  | "twoFA_enabled"
+  |"twoFA_secret"
 
 >;
 
@@ -35,6 +37,8 @@ class User extends Model<UserAttribute, optionalUserAttributes> implements UserA
   declare coverPhoto?: string | undefined;
   declare token: string;
   declare verifyCode: string;
+  declare twoFA_secret?: string | undefined;
+  declare twoFA_enabled?: boolean;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
 }
@@ -83,6 +87,15 @@ User.init(
     token: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    twoFA_enabled: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    twoFA_secret:{
+      type: DataTypes.STRING,
+      allowNull:true,
     },
     image: {
       type: DataTypes.STRING,

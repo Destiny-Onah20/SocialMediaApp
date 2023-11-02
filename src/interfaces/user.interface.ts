@@ -14,4 +14,6 @@ export interface UserAttribute {
   isVerified?: boolean;
   updatedAt?: Date;
   createdAt?: Date;
+  twoFA_enabled?: boolean;
+  twoFA_secret?: string;
 }
