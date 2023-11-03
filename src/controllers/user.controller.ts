@@ -115,6 +115,8 @@ export const signUpUser: RequestHandler = async (req, res) => {
 };
 
 
+
+
 export const verifyUserSignUp: RequestHandler = async (req, res) => {
   try {
     const { verificationCode } = req.body;
